@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Craftihouse Chat</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Jost',sans-serif;background:#f5efe4;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+:root{--gold:#C9A84C;--gold-light:#E8C97A;--gold-dark:#A07830;--espresso:#1C110A;--brown:#3D200E;--cream:#FDF8F0;--sand:#F2E8D5;--sand2:#E8D9BF;--muted:#9A8468;--green:#5AA876;--red:#e05c5c;}
+#launcher{position:fixed;bottom:28px;right:28px;width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,#E8C97A,#A07830);border:none;cursor:pointer;z-index:9999;box-shadow:0 6px 24px rgba(201,168,76,0.5);display:flex;align-items:center;justify-content:center;transition:transform 0.2s;}
+#launcher:hover{transform:scale(1.08);}
+#launcher::before{content:'';position:absolute;inset:-6px;border-radius:50%;border:2px solid rgba(201,168,76,0.4);animation:pulse 2.4s ease-out infinite;}
+@keyframes pulse{0%{opacity:1;transform:scale(1);}70%,100%{opacity:0;transform:scale(1.4);}}
+#badge{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#e05c5c;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+#ico-close{display:none;color:#fff;font-size:24px;font-weight:300;line-height:1;}
+#window{position:fixed;bottom:108px;right:28px;width:370px;height:610px;background:#FDF8F0;border-radius:24px;box-shadow:0 24px 64px rgba(28,17,10,0.22),0 0 0 1px rgba(201,168,76,0.18);display:flex;flex-direction:column;overflow:hidden;z-index:9998;transform:translateY(20px) scale(0.95);opacity:0;pointer-events:none;transition:transform 0.4s cubic-bezier(.34,1.56,.64,1),opacity 0.3s;}
+#window.open{transform:none;opacity:1;pointer-events:all;}
+.header{background:linear-gradient(160deg,#1C110A,#3D200E);flex-shrink:0;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg,transparent,transparent 18px,rgba(201,168,76,0.04) 18px,rgba(201,168,76,0.04) 19px);}
+.header-top{padding:16px 18px 12px;display:flex;align-items:center;gap:10px;position:relative;z-index:1;}
+.hlogo{height:36px;width:auto;object-fit:contain;filter:drop-shadow(0 1px 4px rgba(201,168,76,0.4));}
+.header-sub{font-size:10px;color:rgba(232,201,122,0.6);letter-spacing:0.08em;text-transform:uppercase;margin-top:2px;flex:1;}
+.close-btn{background:rgba(255,255,255,0.1);border:none;width:30px;height:30px;border-radius:50%;color:rgba(232,201,122,0.8);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.close-btn:hover{background:rgba(255,255,255,0.2);}
+.agent-row{padding:10px 18px 14px;display:flex;align-items:center;gap:10px;position:relative;z-index:1;border-top:1px solid rgba(201,168,76,0.12);}
+.agent-av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#E8C97A,#A07830);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:#1C110A;position:relative;flex-shrink:0;}
+.agent-av::after{content:'';position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;background:#5AA876;border:2px solid #1C110A;}
+.agent-name{font-size:13px;font-weight:600;color:#E8C97A;}
+.agent-status{font-size:11px;color:#5AA876;display:flex;align-items:center;gap:4px;margin-top:1px;}
+.rep-badge{margin-left:auto;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.2);border-radius:20px;padding:4px 10px;font-size:10px;color:rgba(232,201,122,0.7);text-align:center;line-height:1.3;}
+.panel{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.panel.active{display:flex;}
+.prechat{padding:20px;overflow-y:auto;flex:1;}
+.prechat h2{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#1C110A;text-align:center;margin-bottom:6px;}
+.prechat p{font-size:13px;color:#9A8468;line-height:1.6;text-align:center;margin-bottom:18px;}
+.orn{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.orn-line{flex:1;height:1px;background:#E8D9BF;}
+.field{margin-bottom:11px;}
+.field label{display:block;font-size:11px;font-weight:600;color:#9A8468;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;}
+.field input,.field select{width:100%;padding:10px 12px;background:#F2E8D5;border:1.5px solid #E8D9BF;border-radius:10px;font-family:'Jost',sans-serif;font-size:14px;color:#1C110A;outline:none;appearance:none;transition:border-color 0.2s;}
+.field input:focus,.field select:focus{border-color:#C9A84C;box-shadow:0 0 0 3px rgba(201,168,76,0.1);}
+.field input.err{border-color:#e05c5c;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.start-btn{width:100%;padding:13px;margin-top:6px;background:linear-gradient(135deg,#E8C97A,#A07830);border:none;border-radius:12px;font-family:'Jost',sans-serif;font-size:14px;font-weight:600;color:#1C110A;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 4px 16px rgba(201,168,76,0.35);transition:transform 0.2s;}
+.start-btn:hover{transform:translateY(-1px);}
+.privacy{text-align:center;margin-top:10px;font-size:10.5px;color:#9A8468;}
+.privacy a{color:#A07830;text-decoration:none;}
+#messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:6px;scroll-behavior:smooth;}
+#messages::-webkit-scrollbar{width:3px;}
+#messages::-webkit-scrollbar-thumb{background:#E8D9BF;border-radius:4px;}
+.date-div{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.date-div span{font-size:10px;color:#9A8468;text-transform:uppercase;letter-spacing:0.1em;}
+.date-div::before,.date-div::after{content:'';flex:1;height:1px;background:#E8D9BF;}
+.msg{display:flex;gap:8px;align-items:flex-end;animation:msgIn 0.3s ease;}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.msg.user{flex-direction:row-reverse;}
+.av{width:26px;height:26px;border-radius:50%;flex-shrink:0;background:linear-gradient(135deg,#E8C97A,#A07830);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:12px;font-weight:700;color:#1C110A;}
+.bwrap{max-width:75%;display:flex;flex-direction:column;gap:2px;}
+.msg.user .bwrap{align-items:flex-end;}
+.bub{padding:10px 13px;font-size:14px;line-height:1.5;}
+.msg.agent .bub{background:#F2E8D5;color:#1C110A;border-radius:16px 16px 16px 4px;border:1px solid #E8D9BF;}
+.msg.user .bub{background:linear-gradient(135deg,#E8C97A,#A07830);color:#1C110A;border-radius:16px 16px 4px 16px;}
+.meta{font-size:10px;color:#9A8468;display:flex;align-items:center;gap:3px;padding:0 2px;}
+.msg.user .meta{justify-content:flex-end;}
+.tick{color:#C9A84C;}
+.typing{display:flex;gap:8px;align-items:flex-end;}
+.dots{background:#F2E8D5;border:1px solid #E8D9BF;border-radius:16px 16px 16px 4px;padding:10px 14px;display:flex;gap:5px;align-items:center;}
+.dots span{width:6px;height:6px;border-radius:50%;background:#9A8468;display:block;animation:dot 1.2s infinite;}
+.dots span:nth-child(2){animation-delay:0.2s;}.dots span:nth-child(3){animation-delay:0.4s;}
+@keyframes dot{0%,60%,100%{transform:translateY(0);opacity:0.5;}30%{transform:translateY(-5px);opacity:1;}}
+#quick{padding:4px 14px 8px;display:flex;gap:7px;overflow-x:auto;flex-shrink:0;}
+#quick::-webkit-scrollbar{display:none;}
+.qr{flex-shrink:0;background:transparent;border:1.5px solid #C9A84C;color:#A07830;border-radius:20px;padding:6px 13px;font-family:'Jost',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.qr:hover{background:#C9A84C;color:#fff;}
+.input-bar{padding:10px 12px 14px;background:#fff;border-top:1px solid #E8D9BF;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;}
+.input-wrap{flex:1;background:#F2E8D5;border:1.5px solid #E8D9BF;border-radius:14px;padding:9px 12px;transition:border-color 0.2s;}
+.input-wrap:focus-within{border-color:#C9A84C;}
+.input-wrap textarea{width:100%;background:transparent;border:none;outline:none;font-family:'Jost',sans-serif;font-size:14px;color:#1C110A;resize:none;line-height:1.4;max-height:80px;overflow-y:auto;}
+.input-wrap textarea::placeholder{color:#9A8468;opacity:0.7;}
+#send{width:38px;height:38px;border-radius:50%;border:none;background:linear-gradient(135deg,#E8C97A,#A07830);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(201,168,76,0.35);transition:transform 0.2s;opacity:0.35;}
+#send.on{opacity:1;}
+#send.on:hover{transform:scale(1.08);}
+.footer{text-align:center;padding:5px 0 4px;font-size:10px;color:#9A8468;background:#fff;flex-shrink:0;}
+.footer a{color:#A07830;text-decoration:none;font-weight:500;}
+.sat{background:#F2E8D5;border:1px solid #E8D9BF;border-radius:14px;padding:12px 14px;margin:4px 0;}
+.sat p{font-size:12px;color:#9A8468;font-weight:500;margin-bottom:8px;}
+.sat-row{display:flex;gap:6px;}
+.sat-row button{background:#fff;border:1.5px solid #E8D9BF;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;transition:all 0.15s;}
+.sat-row button.sel{border-color:#C9A84C;background:rgba(201,168,76,0.1);transform:scale(1.12);}
+#conn{font-size:11px;padding:4px 14px;text-align:center;flex-shrink:0;display:none;}
+#conn.show{display:block;}
+#conn.ok{color:#5AA876;background:rgba(90,168,118,0.08);}
+#conn.err{color:#e05c5c;background:rgba(224,92,92,0.08);}
+@media(max-width:420px){#window{right:0;bottom:0;width:100%;height:100%;border-radius:0;}#launcher{bottom:20px;right:20px;}}
+</style>
+</head>
+<body>
+
+<div style="text-align:center;color:#9A8468;font-family:Jost,sans-serif;font-size:13px;opacity:0.4;padding:20px;">
+  <p style="font-family:Cormorant Garamond,serif;font-size:32px;color:#1C110A;opacity:0.12;margin-bottom:8px;">craftihouse.com</p>
+  <p>Click the gold button ↘</p>
+</div>
+
+<button id="launcher" title="Chat with Craftihouse">
+  <div id="badge">1</div>
+  <svg id="ico-open" width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="rgba(255,255,255,0.92)"/>
+    <circle cx="8.5" cy="11" r="1.2" fill="#C9A84C"/>
+    <circle cx="12" cy="11" r="1.2" fill="#C9A84C"/>
+    <circle cx="15.5" cy="11" r="1.2" fill="#C9A84C"/>
+  </svg>
+  <span id="ico-close" style="display:none;color:#fff;font-size:24px;line-height:1;">✕</span>
+</button>
+
+<div id="window">
+  <div class="header">
+    <div class="header-top">
+      <img class="hlogo" id="hlogo" src="https://craftihouse.com/content/images/thumbs/craftihouse-logo.png" alt="Craftihouse"
+        onerror="this.style.display='none';document.getElementById('hlogo-text').style.display='block'"/>
+      <span id="hlogo-text" style="display:none;font-family:Cormorant Garamond,serif;font-size:20px;font-weight:700;color:#E8C97A;">Craftihouse</span>
+      <div class="header-sub">Handcrafted with love · Dubai 🇦🇪</div>
+      <button class="close-btn" id="close-btn">✕</button>
+    </div>
+    <div class="agent-row">
+      <div class="agent-av">L</div>
+      <div>
+        <div class="agent-name">Layla — Craft Advisor</div>
+        <div class="agent-status"><span style="width:7px;height:7px;border-radius:50%;background:#5AA876;display:inline-block;"></span> Online now</div>
+      </div>
+      <div class="rep-badge">Replies in<br>minutes</div>
+    </div>
+  </div>
+
+  <div class="panel active" id="p-form">
+    <div class="prechat">
+      <h2>Welcome to Craftihouse ✦</h2>
+      <p>Share your details and we'll connect you with the right advisor for handcrafted goods, corporate gifts & more.</p>
+      <div class="orn"><div class="orn-line"></div><span style="color:#C9A84C;">◆</span><div class="orn-line"></div></div>
+      <div class="field-row">
+        <div class="field"><label>First Name *</label><input type="text" id="fname" placeholder="Ahmad"/></div>
+        <div class="field"><label>Last Name</label><input type="text" id="lname" placeholder="Al Mansoori"/></div>
+      </div>
+      <div class="field"><label>Email Address *</label><input type="email" id="femail" placeholder="ahmad@company.ae"/></div>
+      <div class="field"><label>Phone (optional)</label><input type="tel" id="fphone" placeholder="+971 50 000 0000"/></div>
+      <div class="field">
+        <label>How can we help?</label>
+        <select id="ftopic">
+          <option value="">— Select a topic —</option>
+          <option>Product inquiry</option>
+          <option>Corporate gifts</option>
+          <option>Track my order</option>
+          <option>Request a refund</option>
+          <option>Custom / Bespoke order</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <button class="start-btn" id="start-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="rgba(28,17,10,0.6)"/></svg>
+        Start Chat
+      </button>
+      <p class="privacy">🔒 Your info is secure · <a href="https://craftihouse.com" target="_blank">craftihouse.com</a></p>
+    </div>
+  </div>
+
+  <div class="panel" id="p-chat">
+    <div id="conn"></div>
+    <div id="messages"><div class="date-div"><span>Today</span></div></div>
+    <div id="quick">
+      <button class="qr">Track my order</button>
+      <button class="qr">Corporate gifts</button>
+      <button class="qr">Custom order</button>
+      <button class="qr">Product inquiry</button>
+    </div>
+    <div class="input-bar">
+      <div class="input-wrap"><textarea id="inp" rows="1" placeholder="Message Craftihouse..."></textarea></div>
+      <button id="send">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+          <path d="M22 2L11 13" stroke="#1C110A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="#1C110A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="footer">Powered by <a href="https://craftihouse.com" target="_blank">Craftihouse.com</a> 🌿</div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+var db = null, sessionId = null, userName = '', msgCount = 0, satShown = false;
+
+// Init Firebase
+try {
+  firebase.initializeApp({
+    apiKey: "AIzaSyCYsdLw4NDSmF-RDJjh74LC2zs7wW8SGE4",
+    authDomain: "craftihouse---chat.firebaseapp.com",
+    databaseURL: "https://craftihouse---chat-default-rtdb.firebaseio.com",
+    projectId: "craftihouse---chat",
+    storageBucket: "craftihouse---chat.firebasestorage.app",
+    messagingSenderId: "111425010466",
+    appId: "1:111425010466:web:a711d1d5ed7a5f2d08437b"
+  });
+  db = firebase.database();
+} catch(e) { console.log('FB init error:', e); }
+
+// Toggle
+document.getElementById('launcher').addEventListener('click', toggle);
+document.getElementById('close-btn').addEventListener('click', toggle);
+function toggle() {
+  var win = document.getElementById('window');
+  var open = win.classList.toggle('open');
+  document.getElementById('ico-open').style.display  = open ? 'none'   : 'flex';
+  document.getElementById('ico-close').style.display = open ? 'inline' : 'none';
+  var b = document.getElementById('badge'); if (b) b.remove();
+}
+
+// Start chat
+document.getElementById('start-btn').addEventListener('click', function() {
+  var fname = document.getElementById('fname').value.trim();
+  var lname = document.getElementById('lname').value.trim();
+  var email = document.getElementById('femail').value.trim();
+  var phone = document.getElementById('fphone').value.trim();
+  var topic = document.getElementById('ftopic').value;
+  var ok = true;
+  if (!fname) { document.getElementById('fname').classList.add('err'); ok = false; }
+  else document.getElementById('fname').classList.remove('err');
+  if (!email || !email.includes('@')) { document.getElementById('femail').classList.add('err'); ok = false; }
+  else document.getElementById('femail').classList.remove('err');
+  if (!ok) return;
+  userName = fname;
+  document.getElementById('p-form').classList.remove('active');
+  document.getElementById('p-chat').classList.add('active');
+
+  // Save to Firebase
+  if (db) {
+    var ref = db.ref('sessions').push();
+    sessionId = ref.key;
+    ref.set({
+      contact: { firstName: fname, lastName: lname, email: email, phone: phone, topic: topic },
+      status: 'open', unreadByAgent: true, lastMessage: '',
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    });
+    // Listen for agent replies
+    db.ref('sessions/' + sessionId + '/messages').on('child_added', function(snap) {
+      var m = snap.val();
+      if (m && m.sender === 'agent' && !m.auto) addAgent(m.text);
+    });
+    setConn('ok', '🟢 Connected');
+  }
+
+  setTimeout(function() { addAgent('Hello ' + fname + '! 👋 Welcome to Craftihouse. I'm Layla, your personal craft advisor.'); }, 400);
+  if (topic) setTimeout(function() { addAgent(autoReply(topic.toLowerCase()) || 'How can I help you with "' + topic + '"?'); }, 1600);
+});
+
+// Input
+document.getElementById('inp').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+  document.getElementById('send').classList.toggle('on', this.value.trim().length > 0);
+});
+document.getElementById('inp').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
+});
+document.getElementById('send').addEventListener('click', doSend);
+document.querySelectorAll('.qr').forEach(function(btn) {
+  btn.addEventListener('click', function() { document.getElementById('inp').value = btn.textContent; doSend(); });
+});
+
+function doSend() {
+  var inp = document.getElementById('inp');
+  var text = inp.value.trim(); if (!text) return;
+  inp.value = ''; inp.style.height = 'auto';
+  document.getElementById('send').classList.remove('on');
+  document.getElementById('quick').style.display = 'none';
+  addUser(text); msgCount++;
+
+  if (db && sessionId) {
+    db.ref('sessions/' + sessionId + '/messages').push({ sender: 'user', text: text, time: now(), ts: firebase.database.ServerValue.TIMESTAMP, auto: false });
+    db.ref('sessions/' + sessionId).update({ unreadByAgent: true, lastMessage: text, lastMessageTime: now() });
+  }
+
+  showTyping();
+  setTimeout(function() {
+    hideTyping();
+    var reply = autoReply(text.toLowerCase()) || 'Thank you! Let me check on that for you right away. 🔍';
+    addAgent(reply);
+    if (db && sessionId) {
+      db.ref('sessions/' + sessionId + '/messages').push({ sender: 'agent', text: reply, time: now(), ts: firebase.database.ServerValue.TIMESTAMP, auto: true });
+    }
+    if (msgCount >= 2) showSat();
+  }, 1500 + Math.random() * 700);
+}
+
+function autoReply(k) {
+  if (k.includes('track') || k.includes('order'))    return 'Please share your order number and I'll look that up right away! 📦';
+  if (k.includes('refund'))                          return 'Please share your order ID and the reason — I'll arrange this right away.';
+  if (k.includes('corporate') || k.includes('gift')) return 'We'd love to help! 🎁 We create bespoke corporate gift sets for UAE businesses. What's the occasion and quantity?';
+  if (k.includes('custom') || k.includes('bespoke')) return 'A custom order — wonderful! ✨ Please share your idea, quantity, and timeline.';
+  if (k.includes('product') || k.includes('inquiry'))return 'Are you looking for leather goods, Persian handicrafts, wooden pieces, or something else? 🌿';
+  return null;
+}
+
+function addAgent(text) {
+  var d = document.createElement('div'); d.className = 'msg agent';
+  d.innerHTML = '<div class="av">L</div><div class="bwrap"><div class="bub">' + text + '</div><div class="meta">' + now() + '</div></div>';
+  append(d);
+}
+function addUser(text) {
+  var d = document.createElement('div'); d.className = 'msg user';
+  d.innerHTML = '<div class="bwrap"><div class="bub">' + text + '</div><div class="meta">' + now() + ' <span class="tick">✓✓</span></div></div>';
+  append(d);
+}
+function showTyping() {
+  if (document.getElementById('typ')) return;
+  var d = document.createElement('div'); d.className = 'typing'; d.id = 'typ';
+  d.innerHTML = '<div class="av">L</div><div class="dots"><span></span><span></span><span></span></div>';
+  append(d);
+}
+function hideTyping() { var e = document.getElementById('typ'); if (e) e.remove(); }
+function showSat() {
+  if (satShown) return; satShown = true;
+  var box = document.createElement('div'); box.className = 'sat';
+  var p = document.createElement('p'); p.textContent = 'How are we doing so far? 😊';
+  var row = document.createElement('div'); row.className = 'sat-row';
+  ['😞','😐','🙂','😄','🤩'].forEach(function(e) {
+    var b = document.createElement('button'); b.textContent = e;
+    b.addEventListener('click', function() {
+      row.querySelectorAll('button').forEach(function(x){ x.classList.remove('sel'); });
+      b.classList.add('sel');
+    });
+    row.appendChild(b);
+  });
+  box.appendChild(p); box.appendChild(row); append(box);
+}
+function setConn(cls, msg) {
+  var el = document.getElementById('conn');
+  el.className = cls + ' show'; el.textContent = msg;
+  setTimeout(function(){ el.className = ''; }, 3000);
+}
+function append(el) { var m = document.getElementById('messages'); m.appendChild(el); m.scrollTop = m.scrollHeight; }
+function now() { return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+</script>
+</body>
+</html>
